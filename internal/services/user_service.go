@@ -24,7 +24,7 @@ func (d *UserService) ListUsers(ctx context.Context, req *proto.ListUsersReq) (*
 		return nil, status.Errorf(codes.PermissionDenied, "not authenticated")
 	}
 
-	if !user.Claims.Has("admin", "true") {
+	if !user.Claims.IsAdmin() {
 		return nil, status.Errorf(codes.PermissionDenied, "must be an admin")
 	}
 
@@ -45,7 +45,7 @@ func (d *UserService) DeleteUser(ctx context.Context, req *proto.DeleteUserReq) 
 		return nil, status.Errorf(codes.PermissionDenied, "not authenticated")
 	}
 
-	if !user.Claims.Has("admin", "true") {
+	if !user.Claims.IsAdmin() {
 		return nil, status.Errorf(codes.PermissionDenied, "must be an admin")
 	}
 
