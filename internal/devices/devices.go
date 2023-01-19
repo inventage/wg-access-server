@@ -23,6 +23,10 @@ type DeviceManager struct {
 	cidrv6  string
 }
 
+type User struct {
+	Name string
+}
+
 // https://lists.zx2c4.com/pipermail/wireguard/2020-December/006222.html
 var regex = regexp.MustCompile("^[A-Za-z0-9+/]{42}[A|E|I|M|Q|U|Y|c|g|k|o|s|w|4|8|0]=$")
 
@@ -260,6 +264,40 @@ func deviceListContains(devices []*storage.Device, publicKey string) bool {
 		}
 	}
 	return false
+}
+
+func (d *DeviceManager) ListUsers() ([]*User, error) {
+	devices, err := d.storage.List("")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve devices")
+	}
+
+	seen := map[string]bool{}
+	users := []*User{}
+	for _, dev := range devices {
+		if _, ok := seen[dev.Owner]; !ok {
+			users = append(users, &User{Name: dev.Owner})
+			seen[dev.Owner] = true
+		}
+	}
+
+	return users, nil
+}
+
+func (d *DeviceManager) DeleteDevicesForUser(user string) error {
+	devices, err := d.ListDevices(user)
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve devices")
+	}
+
+	for _, dev := range devices {
+		// TODO not transactional
+		if err := d.DeleteDevice(user, dev.Name); err != nil {
+			return errors.Wrap(err, "failed to delete device")
+		}
+	}
+
+	return nil
 }
 
 func IsConnected(lastHandshake time.Time) bool {
