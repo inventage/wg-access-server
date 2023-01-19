@@ -3,16 +3,17 @@ package devices
 import (
 	"fmt"
 	"net/netip"
+	"regexp"
 	"sync"
 	"time"
-
-	"github.com/freifunkMUC/wg-access-server/internal/network"
-	"github.com/freifunkMUC/wg-access-server/internal/storage"
-	"github.com/freifunkMUC/wg-access-server/pkg/authnz/authsession"
 
 	"github.com/freifunkMUC/wg-embed/pkg/wgembed"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/freifunkMUC/wg-access-server/internal/network"
+	"github.com/freifunkMUC/wg-access-server/internal/storage"
+	"github.com/freifunkMUC/wg-access-server/pkg/authnz/authsession"
 )
 
 type DeviceManager struct {
@@ -21,6 +22,9 @@ type DeviceManager struct {
 	cidr    string
 	cidrv6  string
 }
+
+// https://lists.zx2c4.com/pipermail/wireguard/2020-December/006222.html
+var regex = regexp.MustCompile("^[A-Za-z0-9+/]{42}[A|E|I|M|Q|U|Y|c|g|k|o|s|w|4|8|0]=$")
 
 func New(wg wgembed.WireGuardInterface, s storage.Storage, cidr, cidrv6 string) *DeviceManager {
 	return &DeviceManager{wg, s, cidr, cidrv6}
@@ -77,6 +81,10 @@ func (d *DeviceManager) AddDevice(identity *authsession.Identity, name string, p
 
 	if nameTaken {
 		return nil, errors.New("device name already taken")
+	}
+
+	if !regex.MatchString(publicKey) {
+		return nil, errors.New("public key has invalid format")
 	}
 
 	clientAddr, err := d.nextClientAddress()
