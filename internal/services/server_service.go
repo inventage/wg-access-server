@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/freifunkMUC/wg-embed/pkg/wgembed"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
+	"github.com/inventage/wg-embed/pkg/wgembed"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

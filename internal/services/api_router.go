@@ -6,11 +6,11 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/freifunkMUC/wg-embed/pkg/wgembed"
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpcLogrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"github.com/inventage/wg-embed/pkg/wgembed"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
