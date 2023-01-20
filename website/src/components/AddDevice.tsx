@@ -2,11 +2,13 @@ import Button from '@material-ui/core/Button';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
+import Checkbox from '@material-ui/core/Checkbox';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -16,7 +18,7 @@ import { codeBlock } from 'common-tags';
 import { makeObservable, observable } from 'mobx';
 import { observer } from 'mobx-react';
 import React from 'react';
-import { box_keyPair } from 'tweetnacl-ts';
+import { box_keyPair, randomBytes } from 'tweetnacl-ts';
 import { grpc } from '../Api';
 import { AppState } from '../AppState';
 import { GetConnected } from './GetConnected';
@@ -35,6 +37,8 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
 
   devicePublickey = '';
 
+  useDevicePresharekey = false;
+
   configFile?: string;
 
   submit = async (event: React.FormEvent) => {
@@ -44,10 +48,13 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
     const publicKey = this.devicePublickey || window.btoa(String.fromCharCode(...(new Uint8Array(keypair.publicKey) as any)));
     const privateKey = window.btoa(String.fromCharCode(...(new Uint8Array(keypair.secretKey) as any)));
 
+    const presharedKey = this.useDevicePresharekey ? window.btoa(String.fromCharCode(...(randomBytes(32) as any))) : '';
+
     try {
       const device = await grpc.devices.addDevice({
         name: this.deviceName,
         publicKey,
+        presharedKey,
       });
       this.props.onAdd();
 
@@ -62,6 +69,7 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
         PublicKey = ${info.publicKey}
         AllowedIPs = ${info.allowedIps}
         Endpoint = ${`${info.host?.value || window.location.hostname}:${info.port || '51820'}`}
+        ${ this.useDevicePresharekey ? `PresharedKey = ${presharedKey}` : `` }
       `;
 
       this.configFile = configFile;
@@ -77,6 +85,7 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
   reset = () => {
     this.deviceName = '';
     this.devicePublickey = '';
+    this.useDevicePresharekey = false;
     this.error = '';
   };
 
@@ -88,6 +97,7 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
       error: observable,
       deviceName: observable,
       devicePublickey: observable,
+      useDevicePresharekey: observable,
       configFile: observable
     });
   }
@@ -119,6 +129,16 @@ export const AddDevice = observer(class AddDevice extends React.Component<Props>
                 />
                 <FormHelperText id="device-publickey-text">You may extract your public key from your given private key with: wg pubkey &lt; private.key</FormHelperText>
               </FormControl>
+              <FormControlLabel 
+                control={
+                  <Checkbox
+                    id="device-presharedkey"
+                    value={this.useDevicePresharekey}
+                    onChange={(event) => (this.useDevicePresharekey = event.currentTarget.checked)}
+                  />
+                } 
+                label="Use pre-shared key" 
+              />
               <FormHelperText id="device-error-text" error={true}>{this.error}</FormHelperText>
               <Typography component="div" align="right">
                 <Button color="secondary" type="button" onClick={this.reset}>
